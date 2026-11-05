@@ -1,7 +1,9 @@
 {
+ "id": "/VintedSearcher/",
  "name": "Vinted Searcher",
  "short_name": "Vinted Search",
- "start_url": "./",
+ "start_url": "/VintedSearcher/",
+ "scope": "/VintedSearcher/",
  "display": "standalone",
  "background_color": "#101416",
  "theme_color": "#101416",
