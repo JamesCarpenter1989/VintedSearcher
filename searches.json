@@ -1,3 +1,15 @@
 {
- "searches": []
+ "searches": [
+  {
+   "id": "smw40xrgw",
+   "name": "Filson",
+   "url": "https://www.vinted.co.uk/catalog?search_text=filson&currency=GBP&size_ids[]=210&page=1&time=1793912050",
+   "query": "",
+   "min_price": null,
+   "max_price": null,
+   "exclude": [],
+   "include": [],
+   "enabled": true
+  }
+ ]
 }
