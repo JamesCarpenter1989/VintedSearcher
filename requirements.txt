@@ -1,0 +1,2 @@
+vinted_scraper>=5.2,<6
+apify-client>=3,<4
