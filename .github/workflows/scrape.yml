@@ -1,0 +1,52 @@
+name: Scrape Vinted
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # every hour, at :17 to dodge the busy top of the hour
+  workflow_dispatch:
+    inputs:
+      force_apify:
+        description: "Skip the free route and use Apify"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      - name: Run searches
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          FORCE_APIFY: ${{ inputs.force_apify && '1' || '' }}
+        run: python scrape.py
+
+      - name: Save results
+        run: |
+          git config user.name  "vinted-bot"
+          git config user.email "vinted-bot@users.noreply.github.com"
+          git add items.json
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Update results $(date -u +%H:%M)"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep 5
+          done
+          exit 1
