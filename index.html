@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101416">
+<title>Vinted Searcher</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#101416; --panel:#192024; --panel2:#222b30; --line:#2c373d;
+  --text:#eef3f4; --muted:#93a3a9; --accent:#1fb7b0; --accent-ink:#06211f;
+  --new:#ffb547; --bad:#ff6b6b; --like:#ff5d8f;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 8px;border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:8px}
+.top h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.2px;flex:1}
+.top h1 span{color:var(--accent)}
+.sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.sub b{color:var(--text);font-weight:600}
+.iconbtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;padding:0}
+.iconbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.iconbtn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 12px;font-size:13.5px;white-space:nowrap}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.chip .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:9px;background:var(--new);color:#2a1a00;font-size:11.5px;font-weight:700;text-align:center}
+.bar{display:flex;gap:7px;align-items:center;padding:8px 0 0}
+.bar select,.bar .tog{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:13px}
+.bar .tog.on{border-color:var(--accent);color:var(--accent)}
+.bar .sp{flex:1}
+.bar .link{background:none;border:0;color:var(--accent);font-size:13px;padding:6px 2px}
+main{padding:12px 12px calc(30px + env(safe-area-inset-bottom))}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.card{background:var(--panel);border-radius:var(--r);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.card a{color:inherit;text-decoration:none;display:block}
+.ph{aspect-ratio:3/4;background:var(--panel2);display:block;width:100%;object-fit:cover}
+.card.seen .ph{opacity:.55}
+.badge{position:absolute;top:8px;left:8px;background:var(--new);color:#2a1a00;font-size:11px;font-weight:800;padding:2px 7px;border-radius:7px;letter-spacing:.3px}
+.acts{position:absolute;top:6px;right:6px;display:flex;flex-direction:column;gap:6px}
+.acts button{width:34px;height:34px;border-radius:50%;border:0;background:rgba(10,14,16,.72);display:grid;place-items:center;padding:0}
+.acts svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.acts .liked svg{fill:var(--like);stroke:var(--like)}
+.info{padding:8px 10px 10px}
+.price{font-weight:750;font-size:16px}
+.price small{font-weight:500;color:var(--muted);font-size:12px;margin-left:4px}
+.ttl{font-size:13px;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.meta{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{color:var(--muted);text-align:center;padding:48px 18px}
+.empty b{display:block;color:var(--text);font-size:16px;margin-bottom:6px}
+.more{display:block;margin:16px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 18px}
+
+/* sheets */
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
+.sheet.open{display:flex}
+.pane{background:var(--bg);width:100%;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;border-top:1px solid var(--line);
+  padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+@media (min-width:700px){.sheet{align-items:center;justify-content:center}.pane{max-width:560px;border-radius:18px;border:1px solid var(--line)}}
+.ph2{display:flex;align-items:center;margin-bottom:12px}
+.ph2 h2{flex:1;margin:0;font-size:18px}
+.close{background:none;border:0;color:var(--muted);font-size:15px;padding:6px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px}
+.tabs button.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px}
+input[type=text],input[type=url],input[type=number],input[type=password],textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 11px;outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}.row>div{flex:1}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}
+.btn{width:100%;margin-top:16px;border:0;border-radius:12px;padding:12px;background:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.ghost{background:var(--panel);color:var(--text);border:1px solid var(--line);font-weight:500}
+.btn.danger{background:none;border:1px solid var(--bad);color:var(--bad);font-weight:500}
+.slist{display:flex;flex-direction:column;gap:8px}
+.sitem{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:10px 12px}
+.sitem .t{flex:1;min-width:0}
+.sitem .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sitem .t span{font-size:12px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sitem.off{opacity:.5}
+.sw{width:42px;height:24px;border-radius:12px;background:var(--line);border:0;position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
+.sw.on{background:var(--accent)}.sw.on::after{left:21px}
+.small{background:none;border:1px solid var(--line);border-radius:9px;padding:5px 10px;font-size:13px}
+.runs{display:flex;flex-direction:column;gap:8px}
+.run{background:var(--panel);border-radius:12px;padding:10px 12px;font-size:13px}
+.run .h{font-weight:600;margin-bottom:4px}
+.run .l{color:var(--muted);display:flex;gap:6px}
+.run .l .src{min-width:46px}
+.ok{color:var(--accent)}.err{color:var(--bad)}.ap{color:var(--new)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);
+  padding:10px 16px;border-radius:12px;z-index:30;font-size:14px;max-width:90vw;display:none}
+.toast.show{display:block}
+.warn{background:color-mix(in srgb,var(--bad) 14%,var(--panel));border:1px solid color-mix(in srgb,var(--bad) 40%,transparent);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <h1>Vinted <span>Searcher</span></h1>
+    <button class="iconbtn" id="runBtn" title="Run searches now" aria-label="Run searches now">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg></button>
+    <button class="iconbtn" id="menuBtn" title="Searches and settings" aria-label="Searches and settings">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
+  </div>
+  <div class="sub" id="sub">Loading…</div>
+  <div class="chips" id="chips"></div>
+  <div class="bar">
+    <select id="sort" aria-label="Sort">
+      <option value="new">Newest first</option>
+      <option value="low">Price: low to high</option>
+      <option value="high">Price: high to low</option>
+    </select>
+    <button class="tog" id="unreadTog">Unread only</button>
+    <span class="sp"></span>
+    <button class="link" id="readAll">Mark all read</button>
+  </div>
+</header>
+
+<main>
+  <div id="warn"></div>
+  <div class="grid" id="grid"></div>
+  <div id="emptyBox"></div>
+  <button class="more" id="more" hidden>Show more</button>
+</main>
+
+<!-- searches / status / settings sheet -->
+<div class="sheet" id="sheet">
+  <div class="pane">
+    <div class="ph2"><h2 id="sheetTitle">Searches</h2><button class="close" data-close>Close</button></div>
+    <div class="tabs" id="sheetTabs">
+      <button data-tab="searches" class="on">Searches</button>
+      <button data-tab="status">Status</button>
+      <button data-tab="settings">Settings</button>
+    </div>
+    <div id="tab-searches"></div>
+    <div id="tab-status" hidden></div>
+    <div id="tab-settings" hidden></div>
+  </div>
+</div>
+
+<!-- edit search sheet -->
+<div class="sheet" id="editSheet">
+  <div class="pane">
+    <div class="ph2"><h2 id="editTitle">New search</h2><button class="close" data-close>Cancel</button></div>
+    <label for="fName">Name</label>
+    <input type="text" id="fName" placeholder="e.g. Carhartt Detroit jacket">
+    <label for="fUrl">Vinted search link (best)</label>
+    <input type="url" id="fUrl" placeholder="https://www.vinted.co.uk/catalog?search_text=…">
+    <div class="hint">Set up the search with all its filters (size, brand, condition) on vinted.co.uk, then copy the address bar here.</div>
+    <label for="fQuery">…or just keywords</label>
+    <input type="text" id="fQuery" placeholder="e.g. carhartt detroit jacket">
+    <div class="row">
+      <div><label for="fMin">Min price £</label><input type="number" id="fMin" inputmode="decimal" min="0"></div>
+      <div><label for="fMax">Max price £</label><input type="number" id="fMax" inputmode="decimal" min="0"></div>
+    </div>
+    <label for="fExclude">Hide items whose title contains</label>
+    <input type="text" id="fExclude" placeholder="kids, replica, damaged">
+    <label for="fInclude">Only keep items whose title contains one of</label>
+    <input type="text" id="fInclude" placeholder="optional, e.g. detroit, j97">
+    <div class="hint">Comma separated. Not case sensitive.</div>
+    <button class="btn" id="saveSearch">Save search</button>
+    <button class="btn danger" id="delSearch" hidden>Delete search</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- storage (per phone) ---------- */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("vs_"+k); return v === null ? d : JSON.parse(v); }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem("vs_"+k, JSON.stringify(v)); }catch{} }
+};
+const DEF = { owner:"jamescarpenter1989", repo:"VintedSearcher", branch:"main" };
+let cfg = Object.assign({}, DEF, store.get("cfg", {}));
+let token = store.get("token", "");
+let liked = store.get("liked", {});      // id -> item snapshot
+let hidden = store.get("hidden", {});    // id -> true
+let opened = store.get("opened", {});    // id -> true
+let readMark = store.get("readMark", ""); // ISO time; items first seen before this are "read"
+let view = store.get("view", { tab:"all", sort:"new", unread:false });
+
+let data = { items:[], runs:[] };
+let searches = [];
+let searchesSha = null;
+let shown = 60;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function toast(msg, ms=2600){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), ms);
+}
+function ago(iso){
+  if(!iso) return "never";
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  if(m < 1) return "just now";
+  if(m < 60) return m + " min ago";
+  const h = Math.round(m/60);
+  if(h < 24) return h + " h ago";
+  return Math.round(h/24) + " d ago";
+}
+const money = (v, cur) => v == null ? "" : (cur === "EUR" ? "€" : cur === "USD" ? "$" : "£") + (Number.isInteger(v) ? v : v.toFixed(2));
+
+/* ---------- GitHub ---------- */
+const api = p => `https://api.github.com/repos/${cfg.owner}/${cfg.repo}${p}`;
+function ghHeaders(extra){ return Object.assign({ "Authorization":"Bearer "+token, "X-GitHub-Api-Version":"2022-11-28" }, extra || {}); }
+
+async function getFile(path){
+  // With a token: always-fresh API read. Without: public raw file.
+  if(token){
+    const r = await fetch(api(`/contents/${path}?ref=${cfg.branch}&t=${Date.now()}`), { headers: ghHeaders({ Accept:"application/vnd.github.raw+json" }), cache:"no-store" });
+    if(!r.ok) throw new Error(`GitHub ${r.status} reading ${path}`);
+    return r.json();
+  }
+  const r = await fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${path}?t=${Date.now()}`, { cache:"no-store" });
+  if(!r.ok){
+    const r2 = await fetch(`${path}?t=${Date.now()}`, { cache:"no-store" }); // same-site fallback
+    if(!r2.ok) throw new Error(`Couldn't load ${path}`);
+    return r2.json();
+  }
+  return r.json();
+}
+
+function b64(str){ const bytes = new TextEncoder().encode(str); let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b)); return btoa(bin); }
+function unb64(s){ const bin = atob(s.replace(/\n/g,"")); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
+
+async function loadSearches(){
+  if(token){
+    const r = await fetch(api(`/contents/searches.json?ref=${cfg.branch}&t=${Date.now()}`), { headers: ghHeaders(), cache:"no-store" });
+    if(!r.ok) throw new Error(`GitHub ${r.status} reading searches`);
+    const j = await r.json();
+    searchesSha = j.sha;
+    searches = JSON.parse(unb64(j.content)).searches || [];
+  } else {
+    searches = (await getFile("searches.json")).searches || [];
+  }
+}
+
+async function saveSearches(msg){
+  if(!token){ toast("Add your GitHub token in Settings first"); openSheet("settings"); throw new Error("no token"); }
+  const body = JSON.stringify({ searches }, null, 1) + "\n";
+  const put = sha => fetch(api("/contents/searches.json"), {
+    method:"PUT", headers: ghHeaders({ "Content-Type":"application/json" }),
+    body: JSON.stringify({ message: msg, content: b64(body), sha, branch: cfg.branch })
+  });
+  let r = await put(searchesSha);
+  if(r.status === 409 || r.status === 422){ // file moved on: refresh sha and retry once
+    const cur = await fetch(api(`/contents/searches.json?ref=${cfg.branch}`), { headers: ghHeaders(), cache:"no-store" });
+    searchesSha = (await cur.json()).sha; r = await put(searchesSha);
+  }
+  if(!r.ok) throw new Error(`GitHub ${r.status}: ${(await r.json().catch(()=>({}))).message || "save failed"}`);
+  searchesSha = (await r.json()).content.sha;
+}
+
+async function runNow(forceApify){
+  if(!token){ toast("Add your GitHub token in Settings to run searches from here"); openSheet("settings"); return; }
+  $("runBtn").classList.add("spin");
+  try{
+    const r = await fetch(api("/actions/workflows/scrape.yml/dispatches"), {
+      method:"POST", headers: ghHeaders({ "Content-Type":"application/json" }),
+      body: JSON.stringify({ ref: cfg.branch, inputs: { force_apify: !!forceApify } })
+    });
+    if(r.status !== 204) throw new Error(`GitHub ${r.status}: ${(await r.json().catch(()=>({}))).message || ""}`);
+    toast("Searching now – results in about 2 minutes", 4000);
+    const before = data.updated_at;
+    let tries = 0;
+    const poll = setInterval(async () => {
+      tries++;
+      await loadData(true);
+      if(data.updated_at !== before || tries > 12){
+        clearInterval(poll); $("runBtn").classList.remove("spin");
+        if(data.updated_at !== before) toast("Updated");
+      }
+    }, 25000);
+  }catch(e){ $("runBtn").classList.remove("spin"); toast(e.message, 5000); }
+}
+
+/* ---------- data ---------- */
+async function loadData(quiet){
+  try{
+    const [d] = await Promise.all([ getFile("items.json"), loadSearches() ]);
+    data = d || { items:[], runs:[] };
+    $("warn").innerHTML = "";
+  }catch(e){
+    if(!quiet) $("warn").innerHTML = `<div class="warn">${esc(e.message)}. Check Settings (owner, repo, token).</div>`;
+  }
+  render();
+}
+
+const isUnread = it => !opened[it.id] && (!readMark || it.first_seen > readMark);
+
+function visibleItems(){
+  let list;
+  if(view.tab === "liked") list = Object.values(liked);
+  else {
+    list = data.items.filter(it => !hidden[it.id]);
+    if(view.tab !== "all") list = list.filter(it => (it.searches || []).includes(view.tab));
+  }
+  if(view.unread && view.tab !== "liked") list = list.filter(isUnread);
+  const p = it => it.total ?? it.price ?? 0;
+  if(view.sort === "low") list = list.slice().sort((a,b) => p(a) - p(b));
+  else if(view.sort === "high") list = list.slice().sort((a,b) => p(b) - p(a));
+  else list = list.slice().sort((a,b) => (b.first_seen||"").localeCompare(a.first_seen||""));
+  return list;
+}
+
+/* ---------- render ---------- */
+const heart = `<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`;
+const cross = `<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+
+function render(){
+  // header line
+  const last = data.runs && data.runs[0];
+  const fails = last && last.searches ? last.searches.filter(s => s.error).length : 0;
+  const usedApify = last && last.searches && last.searches.some(s => s.source === "apify");
+  $("sub").innerHTML = `Updated <b>${ago(data.updated_at)}</b> · ${data.items.length} items · ${searches.filter(s => s.enabled !== false).length} searches`
+    + (usedApify ? ` · <span class="ap">via Apify</span>` : "")
+    + (fails ? ` · <span class="err">${fails} failed</span>` : "");
+
+  // chips
+  const unreadIn = sid => data.items.filter(it => !hidden[it.id] && isUnread(it) && (sid === "all" || (it.searches||[]).includes(sid))).length;
+  const chip = (id, label, n) => `<button class="chip ${view.tab===id?"on":""}" data-tab="${esc(id)}">${esc(label)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
+  let h = chip("all", "All", unreadIn("all"));
+  searches.forEach(s => { h += chip(s.id, s.name, unreadIn(s.id)); });
+  h += chip("liked", "♥ Liked", 0);
+  $("chips").innerHTML = h;
+  if(view.tab !== "all" && view.tab !== "liked" && !searches.some(s => s.id === view.tab)) view.tab = "all";
+
+  $("sort").value = view.sort;
+  $("unreadTog").classList.toggle("on", view.unread);
+
+  // grid
+  const list = visibleItems();
+  const names = Object.fromEntries(searches.map(s => [s.id, s.name]));
+  $("grid").innerHTML = list.slice(0, shown).map(it => {
+    const unread = isUnread(it);
+    const meta = [it.size, it.brand, it.condition].filter(Boolean).join(" · ");
+    const from = view.tab === "all" ? (it.searches||[]).map(id => names[id]).filter(Boolean).join(", ") : "";
+    return `<div class="card ${unread ? "" : "seen"}" data-id="${esc(it.id)}">
+      <a href="${esc(it.url)}" target="_blank" rel="noopener" data-open="${esc(it.id)}">
+        ${it.image ? `<img class="ph" loading="lazy" referrerpolicy="no-referrer" src="${esc(it.image)}" alt="">` : `<div class="ph"></div>`}
+        <div class="info">
+          <div class="price">${money(it.total ?? it.price, it.currency)}${it.total && it.price ? `<small>${money(it.price, it.currency)}</small>` : ""}</div>
+          <div class="ttl">${esc(it.title)}</div>
+          ${meta ? `<div class="meta">${esc(meta)}</div>` : ""}
+          <div class="meta">${ago(it.first_seen)}${from ? " · " + esc(from) : ""}</div>
+        </div>
+      </a>
+      ${unread ? `<span class="badge">NEW</span>` : ""}
+      <div class="acts">
+        <button class="${liked[it.id] ? "liked" : ""}" data-like="${esc(it.id)}" aria-label="Like">${heart}</button>
+        ${view.tab === "liked" ? "" : `<button data-hide="${esc(it.id)}" aria-label="Hide">${cross}</button>`}
+      </div>
+    </div>`;
+  }).join("");
+
+  $("more").hidden = list.length <= shown;
+  let empty = "";
+  if(!list.length){
+    if(!searches.length) empty = `<div class="empty"><b>No searches yet</b>Tap the menu button to add your first Vinted search.</div>`;
+    else if(view.tab === "liked") empty = `<div class="empty"><b>Nothing liked yet</b>Tap the heart on an item to keep it here.</div>`;
+    else if(view.unread) empty = `<div class="empty"><b>All caught up</b>Nothing new since you last looked.</div>`;
+    else if(!data.updated_at) empty = `<div class="empty"><b>Waiting for the first run</b>Tap the refresh button to search now, or wait for the hourly run.</div>`;
+    else empty = `<div class="empty"><b>No items</b>This search hasn't found anything that passes its filters.</div>`;
+  }
+  $("emptyBox").innerHTML = empty;
+  store.set("view", view);
+}
+
+/* ---------- feed events ---------- */
+$("chips").addEventListener("click", e => {
+  const b = e.target.closest("[data-tab]"); if(!b) return;
+  view.tab = b.dataset.tab; shown = 60; render(); window.scrollTo({ top:0 });
+});
+$("sort").addEventListener("change", e => { view.sort = e.target.value; render(); });
+$("unreadTog").addEventListener("click", () => { view.unread = !view.unread; render(); });
+$("readAll").addEventListener("click", () => {
+  readMark = new Date().toISOString(); store.set("readMark", readMark); opened = {}; store.set("opened", opened);
+  render(); toast("All marked as read");
+});
+$("more").addEventListener("click", () => { shown += 60; render(); });
+$("grid").addEventListener("click", e => {
+  const like = e.target.closest("[data-like]");
+  if(like){
+    e.preventDefault(); const id = like.dataset.like;
+    if(liked[id]) delete liked[id];
+    else { const it = data.items.find(i => i.id === id); if(it) liked[id] = it; }
+    store.set("liked", liked); render(); return;
+  }
+  const hide = e.target.closest("[data-hide]");
+  if(hide){
+    e.preventDefault(); const id = hide.dataset.hide;
+    hidden[id] = true; store.set("hidden", hidden); render();
+    toast("Hidden"); return;
+  }
+  const open = e.target.closest("[data-open]");
+  if(open){ opened[open.dataset.open] = true; store.set("opened", opened); setTimeout(render, 300); }
+});
+$("runBtn").addEventListener("click", () => runNow(false));
+
+/* ---------- sheets ---------- */
+function openSheet(tab){
+  $("sheet").classList.add("open");
+  showTab(tab || "searches");
+}
+function showTab(tab){
+  document.querySelectorAll("#sheetTabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  ["searches","status","settings"].forEach(t => $("tab-"+t).hidden = t !== tab);
+  $("sheetTitle").textContent = { searches:"Searches", status:"Status", settings:"Settings" }[tab];
+  if(tab === "searches") renderSearches();
+  if(tab === "status") renderStatus();
+  if(tab === "settings") renderSettings();
+}
+document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => b.closest(".sheet").classList.remove("open")));
+document.querySelectorAll(".sheet").forEach(s => s.addEventListener("click", e => { if(e.target === s) s.classList.remove("open"); }));
+$("sheetTabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if(b) showTab(b.dataset.tab); });
+$("menuBtn").addEventListener("click", () => openSheet("searches"));
+
+function describe(s){
+  let d = s.url ? (new URL(s.url, "https://x").searchParams.get("search_text") || "link with filters") : (s.query || "");
+  if(s.min_price || s.max_price) d += ` · £${s.min_price || 0}–${s.max_price ? "£"+s.max_price : "any"}`;
+  if((s.exclude||[]).length) d += ` · not: ${s.exclude.join(", ")}`;
+  return d;
+}
+
+function renderSearches(){
+  const box = $("tab-searches");
+  box.innerHTML = (token ? "" : `<div class="warn">Add your GitHub token in Settings to add or change searches.</div>`)
+    + `<div class="slist">${searches.map(s => `
+      <div class="sitem ${s.enabled === false ? "off" : ""}">
+        <button class="sw ${s.enabled === false ? "" : "on"}" data-toggle="${esc(s.id)}" aria-label="Turn on or off"></button>
+        <div class="t"><b>${esc(s.name)}</b><span>${esc(describe(s))}</span></div>
+        <button class="small" data-edit="${esc(s.id)}">Edit</button>
+      </div>`).join("") || `<div class="empty" style="padding:20px">No searches yet.</div>`}</div>
+    <button class="btn" id="addSearch">Add search</button>`;
+  $("addSearch").onclick = () => openEdit(null);
+  box.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openEdit(b.dataset.edit));
+  box.querySelectorAll("[data-toggle]").forEach(b => b.onclick = async () => {
+    const s = searches.find(x => x.id === b.dataset.toggle);
+    const prev = s.enabled; s.enabled = s.enabled === false;
+    try{ await saveSearches(`${s.enabled ? "Enable" : "Pause"} search: ${s.name}`); renderSearches(); render(); }
+    catch(e){ s.enabled = prev; if(e.message !== "no token") toast(e.message, 5000); }
+  });
+}
+
+function renderStatus(){
+  const runs = data.runs || [];
+  const src = s => s.error ? `<span class="err">failed</span>` : s.source === "apify" ? `<span class="ap">Apify</span>` : `<span class="ok">free</span>`;
+  $("tab-status").innerHTML = `
+    <div class="runs">${runs.slice(0, 24).map(r => `
+      <div class="run"><div class="h">${new Date(r.at).toLocaleString("en-GB", { weekday:"short", hour:"2-digit", minute:"2-digit", day:"numeric", month:"short" })}</div>
+      ${(r.searches || []).map(s => `<div class="l"><span class="src">${src(s)}</span><span>${esc(s.name)}: ${s.count} found, ${s.new} new${s.error ? ` – ${esc(s.error)}` : ""}</span></div>`).join("") || `<div class="l">${esc(r.note || "")}</div>`}
+      </div>`).join("") || `<div class="empty" style="padding:20px">No runs yet.</div>`}</div>
+    <button class="btn ghost" id="runApify">Run now using Apify</button>
+    <div class="hint">Uses Apify credit even if the free route would work. Handy for testing your Apify setup.</div>`;
+  $("runApify").onclick = () => { $("sheet").classList.remove("open"); runNow(true); };
+}
+
+function renderSettings(){
+  $("tab-settings").innerHTML = `
+    <label for="sOwner">GitHub user name</label><input type="text" id="sOwner" value="${esc(cfg.owner)}" autocapitalize="off">
+    <div class="row">
+      <div><label for="sRepo">Repository</label><input type="text" id="sRepo" value="${esc(cfg.repo)}" autocapitalize="off"></div>
+      <div><label for="sBranch">Branch</label><input type="text" id="sBranch" value="${esc(cfg.branch)}" autocapitalize="off"></div>
+    </div>
+    <label for="sToken">GitHub token</label>
+    <input type="password" id="sToken" value="${esc(token)}" placeholder="github_pat_…" autocomplete="off">
+    <div class="hint">A fine-grained token for this repository only, with Contents and Actions set to read and write. It stays on this phone.</div>
+    <button class="btn" id="saveCfg">Save settings</button>
+    <button class="btn ghost" id="testCfg">Test connection</button>
+    <button class="btn ghost" id="clearHidden">Unhide ${Object.keys(hidden).length} hidden items</button>`;
+  $("saveCfg").onclick = () => {
+    cfg = { owner:$("sOwner").value.trim(), repo:$("sRepo").value.trim(), branch:$("sBranch").value.trim() || "main" };
+    token = $("sToken").value.trim();
+    store.set("cfg", cfg); store.set("token", token);
+    toast("Saved"); loadData();
+  };
+  $("testCfg").onclick = async () => {
+    const t = $("sToken").value.trim();
+    try{
+      const r = await fetch(`https://api.github.com/repos/${$("sOwner").value.trim()}/${$("sRepo").value.trim()}`, { headers: t ? { Authorization:"Bearer "+t } : {} });
+      const j = await r.json();
+      if(!r.ok) throw new Error(j.message || r.status);
+      const canPush = j.permissions ? j.permissions.push : false;
+      toast(t ? (canPush ? "Connected – token can save changes" : "Connected, but the token can't write. Check its permissions.") : "Repository found. Add a token to edit searches.", 5000);
+    }catch(e){ toast("Failed: " + e.message, 5000); }
+  };
+  $("clearHidden").onclick = () => { hidden = {}; store.set("hidden", hidden); render(); renderSettings(); toast("Hidden items are back"); };
+}
+
+/* ---------- edit search ---------- */
+let editing = null;
+const list2arr = v => v.split(",").map(x => x.trim()).filter(Boolean);
+function openEdit(id){
+  if(!token){ toast("Add your GitHub token in Settings first"); showTab("settings"); return; }
+  editing = id ? searches.find(s => s.id === id) : null;
+  const s = editing || {};
+  $("editTitle").textContent = editing ? "Edit search" : "New search";
+  $("fName").value = s.name || "";
+  $("fUrl").value = s.url || "";
+  $("fQuery").value = s.query || "";
+  $("fMin").value = s.min_price ?? "";
+  $("fMax").value = s.max_price ?? "";
+  $("fExclude").value = (s.exclude || []).join(", ");
+  $("fInclude").value = (s.include || []).join(", ");
+  $("delSearch").hidden = !editing;
+  $("editSheet").classList.add("open");
+}
+$("saveSearch").onclick = async () => {
+  const url = $("fUrl").value.trim(), query = $("fQuery").value.trim();
+  if(!url && !query){ toast("Add a Vinted link or some keywords"); return; }
+  if(url && !/vinted\.[a-z.]+\/(catalog|vetements|items)/i.test(url)){ toast("That doesn't look like a Vinted search link"); return; }
+  let name = $("fName").value.trim();
+  if(!name) name = query || (new URL(url).searchParams.get("search_text")) || "Search";
+  const num = v => v === "" ? null : Number(v);
+  const rec = {
+    id: editing ? editing.id : "s" + Date.now().toString(36),
+    name, url, query,
+    min_price: num($("fMin").value), max_price: num($("fMax").value),
+    exclude: list2arr($("fExclude").value), include: list2arr($("fInclude").value),
+    enabled: editing ? editing.enabled !== false : true
+  };
+  const backup = searches.slice();
+  if(editing) searches = searches.map(s => s.id === editing.id ? rec : s); else searches.push(rec);
+  $("saveSearch").disabled = true;
+  try{
+    await saveSearches(`${editing ? "Edit" : "Add"} search: ${name}`);
+    $("editSheet").classList.remove("open"); renderSearches(); render();
+    toast(editing ? "Saved – applies from the next run" : "Added – tap refresh to search now", 3500);
+  }catch(e){ searches = backup; if(e.message !== "no token") toast(e.message, 5000); }
+  $("saveSearch").disabled = false;
+};
+$("delSearch").onclick = async () => {
+  if(!editing || !confirm(`Delete "${editing.name}"?`)) return;
+  const backup = searches.slice();
+  searches = searches.filter(s => s.id !== editing.id);
+  try{ await saveSearches(`Delete search: ${editing.name}`); $("editSheet").classList.remove("open"); renderSearches(); render(); toast("Deleted"); }
+  catch(e){ searches = backup; toast(e.message, 5000); }
+};
+
+/* ---------- go ---------- */
+loadData();
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") loadData(true); });
+setInterval(() => { if(document.visibilityState === "visible") loadData(true); }, 5 * 60000);
+})();
+</script>
+</body>
+</html>
