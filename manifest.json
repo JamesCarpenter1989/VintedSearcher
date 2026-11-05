@@ -1,0 +1,9 @@
+{
+ "name": "Vinted Searcher",
+ "short_name": "Vinted Search",
+ "start_url": "./",
+ "display": "standalone",
+ "background_color": "#101416",
+ "theme_color": "#101416",
+ "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
