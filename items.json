@@ -1,6 +1,24 @@
 {
  "items": [
   {
+   "id": "9891498056",
+   "title": "Finlayson sweater",
+   "price": 62.59,
+   "total": 66.42,
+   "currency": "GBP",
+   "brand": "",
+   "size": "",
+   "condition": "",
+   "url": "https://www.vinted.co.uk/items/9891498056-finlayson-sweater",
+   "image": "https://images1.vinted.net/t/02_00042_D4w1Wu17L8fWQCLRAPRKJA8H/310x430/8b4dbb14.webp?s=7f0dabd9fe58e3df7e355fe2129d0c18e63d2db0",
+   "favourites": 6,
+   "first_seen": "2026-11-06T13:25:03+00:00",
+   "last_seen": "2026-11-06T13:25:03+00:00",
+   "searches": [
+    "smw40xrgw"
+   ]
+  },
+  {
    "id": "10687115409",
    "title": "Green Filson Hoodie - CL",
    "price": 36.0,
@@ -1011,6 +1029,19 @@
  ],
  "runs": [
   {
+   "at": "2026-11-06T13:25:03+00:00",
+   "searches": [
+    {
+     "id": "smw40xrgw",
+     "name": "Filson",
+     "source": "free",
+     "count": 1,
+     "new": 1,
+     "error": null
+    }
+   ]
+  },
+  {
    "at": "2026-11-06T12:02:02+00:00",
    "searches": [
     {
@@ -1167,5 +1198,5 @@
    ]
   }
  ],
- "updated_at": "2026-11-06T12:02:02+00:00"
+ "updated_at": "2026-11-06T13:25:03+00:00"
 }
